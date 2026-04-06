@@ -327,3 +327,39 @@ body.typing-overlay-active > *:not(#typing-overlay-backdrop):not(#typing-overlay
   filter: blur(4px);
   pointer-events: none;
 }
+
+/* ========== Floating Selection Button ========== */
+#typepulse-floating-btn {
+  position: absolute;
+  z-index: 2147483647;
+  cursor: pointer;
+  background: #323437;
+  color: #e2b714;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  border: 1.5px solid #e2b714;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, box-shadow 0.2s;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#typepulse-floating-btn:hover {
+  transform: scale(1.15);
+  background: #e2b714;
+  color: #323437;
+  box-shadow: 0 6px 20px rgba(226, 183, 20, 0.3);
+}
+
+#typepulse-floating-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes popIn {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

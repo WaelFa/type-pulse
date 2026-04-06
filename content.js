@@ -18,8 +18,83 @@ let state = {
 // ---------- Overlay Elements ----------
 let overlayPanel = null;
 let overlayBackdrop = null;
+let floatingBtn = null;
+
+function createFloatingButton() {
+  if (floatingBtn) return;
+  floatingBtn = document.createElement('div');
+  floatingBtn.id = 'typepulse-floating-btn';
+  floatingBtn.title = 'Start Typing with TypePulse';
+  floatingBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
+    </svg>
+  `;
+  
+  floatingBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  
+  floatingBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hideFloatingButton();
+    createOverlayPanel();
+  });
+  
+  document.body.appendChild(floatingBtn);
+}
+
+function showFloatingButton(x, y) {
+  if (!floatingBtn) createFloatingButton();
+  floatingBtn.style.display = 'flex';
+  floatingBtn.style.left = `${x}px`;
+  floatingBtn.style.top = `${y}px`;
+}
+
+function hideFloatingButton() {
+  if (floatingBtn) {
+    floatingBtn.style.display = 'none';
+  }
+}
+
+function handleMouseUp(e) {
+  // Wait a tiny bit for selection to be updated
+  setTimeout(() => {
+    const selection = window.getSelection();
+    const text = selection.toString().trim();
+    
+    if (text && text.length > 0) {
+      if (overlayPanel) return; // Don't show if overlay is already open
+      
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      
+      // Position the button above the selection, centered
+      const x = rect.left + (rect.width / 2) - 20 + window.scrollX;
+      const y = rect.top - 50 + window.scrollY;
+      
+      showFloatingButton(x, y);
+    } else {
+      // If clicking outside the button and no text is selected, hide it
+      if (floatingBtn && e.target !== floatingBtn && !floatingBtn.contains(e.target)) {
+        hideFloatingButton();
+      }
+    }
+  }, 10);
+}
+
+document.addEventListener('mouseup', handleMouseUp);
+window.addEventListener('resize', hideFloatingButton);
+document.addEventListener('mousedown', (e) => {
+  if (floatingBtn && e.target !== floatingBtn && !floatingBtn.contains(e.target)) {
+     // Optional: could hide on mousedown too, but mouseup handles it
+  }
+});
 
 function createOverlayPanel() {
+  hideFloatingButton();
   // Hide any existing panels
   removePanels();
 
@@ -430,6 +505,7 @@ function removePanels() {
     overlayBackdrop.remove();
     overlayBackdrop = null;
   }
+  hideFloatingButton();
   document.body.classList.remove('typing-overlay-active');
   window.removeEventListener('keydown', captureWindowKeys, true);
   window.removeEventListener('resize', updateCaretPosition);

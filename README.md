@@ -46,6 +46,7 @@ typing-overlay-extension/
 ## Planned Features
 
 ### Phase 2
+
 - [ ] WPM history chart across sessions
 - [ ] Best/worst speed highlights
 - [ ] Adjustable difficulty modes (blind, words-only, strict)
@@ -53,6 +54,7 @@ typing-overlay-extension/
 - [ ] Custom theme options (light/dark/accent color)
 
 ### Phase 3
+
 - [ ] Export session data as CSV/JSON
 - [ ] Practice mode: load custom text instead of page selection
 - [ ] Streak tracking (consecutive days)
@@ -60,19 +62,19 @@ typing-overlay-extension/
 - [ ] Multi-language support
 
 ### Phase 4
+
 - [ ] Leaderboard (cloud-synced, opt-in)
 - [ ] Share session results as image
 - [ ] Integration with typing benchmarks
-- [ ] Chrome DevTools panel for debugging stats
 
 ## Metrics Explained
 
-| Metric | Formula |
-|--------|---------|
-| WPM | (correct characters / 5) / minutes elapsed |
+| Metric   | Formula                                       |
+| -------- | --------------------------------------------- |
+| WPM      | (correct characters / 5) / minutes elapsed    |
 | Accuracy | (correct keystrokes / total keystrokes) × 100 |
-| Errors | Count of mismatched characters |
-| Progress | characters typed / total characters |
+| Errors   | Count of mismatched characters                |
+| Progress | characters typed / total characters           |
 
 ## Installation (Development)
 
@@ -84,10 +86,10 @@ typing-overlay-extension/
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| Tab | Stay in textarea (prevents focus loss) |
-| Escape | Close overlay (to-do: implement) |
+| Key    | Action                                   |
+| ------ | ---------------------------------------- |
+| Tab    | Stay in textarea (prevents focus loss)   |
+| Escape | Close overlay (to-do: implement)         |
 | Ctrl+R | Reset current session (to-do: implement) |
 
 ## Tech Notes
