@@ -4,6 +4,7 @@
 let state = {
   enabled: false,
   active: false,
+  completed: false,
   targetText: '',
   currentIndex: 0,
   startTime: null,
@@ -23,6 +24,18 @@ let caretUpdateTimer = null;
 let lastScrollTarget = null;
 let lastCaretLineTop = null;
 let lastMeasuredIndex = 0;
+let showSelectionButton = true;
+
+chrome.storage.local.get(['showSelectionButton'], (data) => {
+  showSelectionButton = data.showSelectionButton !== false;
+  if (!showSelectionButton) hideFloatingButton();
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'local' || !changes.showSelectionButton) return;
+  showSelectionButton = changes.showSelectionButton.newValue !== false;
+  if (!showSelectionButton) hideFloatingButton();
+});
 
 function createFloatingButton() {
   if (floatingBtn) return;
@@ -66,6 +79,11 @@ function hideFloatingButton() {
 function handleMouseUp(e) {
   // Wait a tiny bit for selection to be updated
   setTimeout(() => {
+    if (!showSelectionButton) {
+      hideFloatingButton();
+      return;
+    }
+
     const selection = window.getSelection();
     const text = selection.toString().trim();
     
@@ -224,26 +242,23 @@ function renderTextDisplay() {
   if (!display) return;
 
   let html = '';
-  let currentWord = '';
+  let currentSegment = '';
 
-  // Group characters by word so line wrapping only happens between words.
+  // Keep spaces attached to the preceding word so new lines never start with a space.
   for (let i = 0; i < state.targetText.length; i++) {
     const char = state.targetText[i];
+    currentSegment += renderCharSpan(i, char);
 
     if (char === ' ') {
-      if (currentWord) {
-        html += `<span class="word">${currentWord}</span>`;
-        currentWord = '';
+      if (currentSegment) {
+        html += `<span class="word">${currentSegment}</span>`;
+        currentSegment = '';
       }
-      html += renderCharSpan(i, char);
-      continue;
-    }
-
-    currentWord += renderCharSpan(i, char);
+    } 
   }
 
-  if (currentWord) {
-    html += `<span class="word">${currentWord}</span>`;
+  if (currentSegment) {
+    html += `<span class="word">${currentSegment}</span>`;
   }
 
   // Add a placeholder span at the end for the caret when text is finished
@@ -359,6 +374,8 @@ function escapeHtml(ch) {
 
 // ---------- Typing Logic ----------
 function handleInput(e) {
+  if (state.completed) return;
+
   if (!state.active) {
     state.active = true;
     state.startTime = Date.now();
@@ -451,6 +468,8 @@ function calculateSessionStats() {
 }
 
 function sessionComplete() {
+  if (state.completed) return;
+  state.completed = true;
   clearInterval(state.timerId);
   state.active = false;
   state.timerId = null;
@@ -463,42 +482,70 @@ function sessionComplete() {
   
   const inputArea = document.getElementById('overlay-input-wrapper');
   if (inputArea) inputArea.classList.add('hidden');
+
+  const textarea = document.getElementById('overlay-textarea');
+  if (textarea) textarea.disabled = true;
   
   const controls = document.querySelector('.overlay-controls-modern');
   if (controls) controls.classList.add('hidden');
+
+  const existingResults = overlayPanel ? overlayPanel.querySelector('.overlay-results-modern') : null;
+  if (existingResults) existingResults.remove();
 
   // Create results view
   const resultsDiv = document.createElement('div');
   resultsDiv.className = 'overlay-results-modern';
   resultsDiv.innerHTML = `
+    <div class="results-hero">
+      <span class="results-kicker">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        Session Complete
+      </span>
+      <h2 class="results-title">Typing summary</h2>
+    </div>
     <div class="results-main">
-      <div class="results-left">
-        <div class="result-big-item">
-          <span class="result-big-label">wpm</span>
+      <div class="results-primary">
+        <div class="result-big-item result-highlight">
+          <span class="result-big-label">
+            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13V7"/><path d="M15.4 9.6 12 13l-3.4-3.4"/><path d="M20 17a8 8 0 1 1-16 0"/></svg>
+            wpm
+          </span>
           <span class="result-big-val">${stats.wpm}</span>
         </div>
         <div class="result-big-item">
-          <span class="result-big-label">acc</span>
+          <span class="result-big-label">
+            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7v5c0 5 3.4 8.4 8 9 4.6-.6 8-4 8-9V7l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
+            acc
+          </span>
           <span class="result-big-val">${stats.accuracy}%</span>
         </div>
       </div>
       <div class="results-grid">
         <div class="result-small-item">
-          <span class="result-small-label">raw</span>
+          <span class="result-small-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>
+            raw
+          </span>
           <span class="result-small-val">${stats.rawWpm}</span>
         </div>
         <div class="result-small-item">
-          <span class="result-small-label">characters</span>
+          <span class="result-small-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+            characters
+          </span>
           <span class="result-small-val">${stats.characters}</span>
         </div>
         <div class="result-small-item">
-          <span class="result-small-label">time</span>
+          <span class="result-small-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>
+            time
+          </span>
           <span class="result-small-val">${stats.time}s</span>
         </div>
       </div>
     </div>
     <div class="results-footer">
-      <button id="results-restart-btn" class="footer-btn" title="Next Test">
+      <button id="results-restart-btn" class="footer-btn footer-btn-primary" title="Next Test">
         <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         <span>Next Test</span>
       </button>
@@ -544,6 +591,7 @@ function resetSession() {
 
 function resetState() {
   state.active = false;
+  state.completed = false;
   state.currentIndex = 0;
   state.startTime = null;
   state.correctKeystrokes = 0;
@@ -619,6 +667,11 @@ function showToast(message) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'open_overlay') {
     createOverlayPanel();
+    sendResponse({ ok: true });
+  }
+  if (message.action === 'selection_button_setting_changed') {
+    showSelectionButton = message.enabled !== false;
+    if (!showSelectionButton) hideFloatingButton();
     sendResponse({ ok: true });
   }
   return true;

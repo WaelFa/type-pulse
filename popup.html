@@ -19,14 +19,20 @@
     <p class="popup-instructions">
       <strong>How to use:</strong><br>
       1. Highlight text on any page<br>
-      2. Click "Start Typing"<br>
+      2. Click the floating TypePulse button, or right-click the selection and choose <strong>TypePulse: Start typing selection</strong><br>
       3. Type the text to practice your speed
     </p>
 
-    <button id="start-btn" class="primary-btn">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: text-bottom;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-      Start Typing
-    </button>
+    <div class="settings-card">
+      <div class="settings-copy">
+        <span class="settings-title">Selection Button</span>
+        <span class="settings-subtitle">Show the floating button after selecting text on a page.</span>
+      </div>
+      <label class="toggle-switch" for="selection-button-toggle">
+        <input type="checkbox" id="selection-button-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
 
     <div class="divider"></div>
 

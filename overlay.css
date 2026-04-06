@@ -263,11 +263,46 @@
 .overlay-results-modern {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 20px;
   animation: fadeIn 0.4s ease-out;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 4px;
+}
+
+.results-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.results-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #e2b714;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 8px !important;
+  margin-bottom: 12px;
+}
+
+.results-title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  color: #d1d0c5;
+  font-weight: 600;
 }
 
 @keyframes fadeIn {
@@ -282,63 +317,89 @@
 }
 
 .results-main {
-  display: flex;
-  gap: 80px;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
 }
 
-.results-left {
+.results-primary {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 12px;
 }
 
 .result-big-item {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: 8px !important;
+  background: #2c2e31;
+}
+
+.result-highlight {
+  background: #2c2e31;
 }
 
 .result-big-label {
-  font-size: 1rem;
-  color: #646669;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  color: #8b8d91;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
 }
 
 .result-big-val {
-  font-size: 2.5rem;
-  font-weight: bold;
+  font-size: clamp(3rem, 5vw, 4.2rem);
+  font-weight: 600;
   color: #e2b714;
-  line-height: 1;
+  line-height: 0.95;
 }
 
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32px 48px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 8px 0;
 }
 
 .result-small-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 8px !important;
+  background: #2c2e31;
 }
 
 .result-small-label {
-  font-size: 1rem;
-  color: #646669;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  color: #8b8d91;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
 }
 
 .result-small-val {
-  font-size: 2.5rem;
-  font-weight: bold;
+  font-size: clamp(1.7rem, 2.8vw, 2.4rem);
+  font-weight: 600;
   color: #d1d0c5;
+  line-height: 1;
 }
 
 .results-footer {
   display: flex;
   justify-content: center;
-  gap: 32px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 2px;
+  flex-wrap: wrap;
 }
 
 .footer-btn {
@@ -346,20 +407,54 @@
   border: none;
   color: #646669;
   cursor: pointer;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 10px 20px;
+  border-radius: 6px;
   transition:
     color 0.2s,
     background 0.2s;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-family: inherit;
 }
 
 .footer-btn:hover {
   color: #d1d0c5;
   background: #2c2e31;
+}
+
+.footer-btn-primary {
+  background: transparent;
+  color: #646669;
+}
+
+.footer-btn-primary:hover {
+  color: #d1d0c5;
+  background: #2c2e31;
+}
+
+@media (max-width: 760px) {
+  .overlay-results-modern {
+    padding: 0;
+  }
+
+  .results-main {
+    grid-template-columns: 1fr;
+  }
+
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .results-footer {
+    flex-direction: column;
+  }
+
+  .footer-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .hidden {
@@ -383,8 +478,8 @@ body.typing-overlay-active
   background: #323437 !important;
   color: #e2b714 !important;
   border-radius: 50% !important;
-  width: 45px !important;
-  height: 45px !important;
+  width: 36px !important;
+  height: 36px !important;
   display: none;
   align-items: center !important;
   justify-content: center !important;
@@ -408,8 +503,8 @@ body.typing-overlay-active
 }
 
 #typepulse-floating-btn svg {
-  width: 22px !important;
-  height: 22px !important;
+  width: 18px !important;
+  height: 18px !important;
   pointer-events: none !important;
 }
 
