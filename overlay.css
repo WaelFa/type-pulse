@@ -1,0 +1,329 @@
+/* Overlay and stats CSS — injected into every page */
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;600;700&display=swap');
+/* ========== Full Screen Backdrop ========== */
+#typing-overlay-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 2147483645;
+}
+
+/* ========== Main Overlay Panel ========== */
+#typing-overlay-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2147483646;
+  font-family: 'Lexend Deca', 'Inter', 'SF Pro Text', system-ui, -apple-system, sans-serif;
+  background: #323437;
+  color: #646669;
+  width: 1000px;
+  max-width: 90vw;
+  height: min-content;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding: 48px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  gap: 32px;
+  box-sizing: border-box;
+}
+
+/* ========== Header & Stats ========== */
+.overlay-header-modern {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #646669;
+  font-size: 1.2rem;
+}
+
+.overlay-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #e2b714;
+  font-weight: bold;
+}
+
+.overlay-stats-top {
+  display: flex;
+  gap: 24px;
+  opacity: 0; /* Hidden initially, shown when typing starts */
+  transition: opacity 0.3s ease;
+}
+.overlay-stats-top.typing-started {
+  opacity: 1;
+}
+
+.stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 1rem;
+}
+.stat-val {
+  color: #d1d0c5;
+  font-size: 1.5rem;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.overlay-close-modern {
+  cursor: pointer;
+  color: #646669;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.overlay-close-modern:hover {
+  color: #ca4754;
+}
+
+/* ========== Typing Area ========== */
+.overlay-input-wrapper-modern {
+  position: relative;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-size: 24px;
+  line-height: 1.5;
+  color: #646669;
+  cursor: text;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.overlay-text-display-modern {
+  word-break: break-word;
+  user-select: none;
+  min-height: 100px;
+  position: relative;
+}
+
+.char {
+  transition: color 0.1s;
+  padding: 0 1px;
+}
+.char.done {
+  color: #d1d0c5;
+}
+.char.error {
+  color: #ca4754;
+  background: rgba(202, 71, 84, 0.15); /* Slight background for errors like Monkeytype */
+  border-radius: 3px;
+}
+
+/* ========== Caret ========== */
+#overlay-caret {
+  position: absolute;
+  width: 2px;
+  height: 1.1em;
+  background-color: #e2b714;
+  border-radius: 1px;
+  transition: left 0.1s ease, top 0.1s ease;
+  animation: cursor-blink 1s infinite step-end;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 0 8px rgba(226, 183, 20, 0.4);
+}
+#overlay-caret.typing {
+  animation: none;
+  opacity: 1 !important;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ========== Custom Scrollbar ========== */
+.overlay-input-wrapper-modern::-webkit-scrollbar {
+  width: 8px;
+}
+.overlay-input-wrapper-modern::-webkit-scrollbar-track {
+  background: transparent;
+}
+.overlay-input-wrapper-modern::-webkit-scrollbar-thumb {
+  background: #2c2e31;
+  border-radius: 4px;
+}
+.overlay-input-wrapper-modern::-webkit-scrollbar-thumb:hover {
+  background: #3a3c3f;
+}
+
+/* ========== Hidden Input ========== */
+.overlay-hidden-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  top: 0;
+  left: 0;
+  z-index: -1;
+}
+
+/* ========== Controls ========== */
+.overlay-controls-modern {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 16px;
+}
+
+.overlay-btn-modern {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  color: #646669;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+.overlay-btn-modern:hover {
+  color: #d1d0c5;
+  background: #2c2e31;
+}
+
+/* ========== Toast ========== */
+#typing-toast {
+  position: fixed;
+  z-index: 2147483647;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 28px;
+  background: #e2b714;
+  color: #323437;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(226, 183, 20, 0.2);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ========== Results Screen ========== */
+.overlay-results-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  animation: fadeIn 0.4s ease-out;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.results-main {
+  display: flex;
+  gap: 80px;
+  align-items: center;
+  justify-content: center;
+}
+
+.results-left {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.result-big-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.result-big-label {
+  font-size: 1rem;
+  color: #646669;
+}
+
+.result-big-val {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #e2b714;
+  line-height: 1;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px 48px;
+}
+
+.result-small-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.result-small-label {
+  font-size: 1rem;
+  color: #646669;
+}
+
+.result-small-val {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #d1d0c5;
+}
+
+.results-footer {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 16px;
+}
+
+.footer-btn {
+  background: transparent;
+  border: none;
+  color: #646669;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+}
+
+.footer-btn:hover {
+  color: #d1d0c5;
+  background: #2c2e31;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Blur underlying page when overlay active */
+body.typing-overlay-active > *:not(#typing-overlay-backdrop):not(#typing-overlay-panel):not(#typing-toast) {
+  filter: blur(4px);
+  pointer-events: none;
+}

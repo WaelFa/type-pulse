@@ -1,0 +1,7 @@
+# Build/IDE
+.DS_Store
+node_modules/
+.vscode/
+
+# Chrome
+chrome-extension.zip

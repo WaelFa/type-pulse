@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TypePulse Extension</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="popup-header">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+      </div>
+      <h1>TypePulse</h1>
+    </div>
+
+    <p class="popup-instructions">
+      <strong>How to use:</strong><br>
+      1. Highlight text on any page<br>
+      2. Click "Start Typing"<br>
+      3. Type the text to practice your speed
+    </p>
+
+    <button id="start-btn" class="primary-btn">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: text-bottom;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      Start Typing
+    </button>
+
+    <div class="divider"></div>
+
+    <div id="stats-summary" class="stats-summary hidden">
+      <h3>Last Session</h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-value" id="last-wpm">-</span>
+          <span class="stat-label">wpm</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="last-accuracy">-</span>
+          <span class="stat-label">acc %</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="last-errors">-</span>
+          <span class="stat-label">errors</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="last-time">-</span>
+          <span class="stat-label">time (s)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
