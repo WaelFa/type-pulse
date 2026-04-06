@@ -1,5 +1,4 @@
-/* Overlay and stats CSS — injected into every page */
-@import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap");
 /* ========== Full Screen Backdrop ========== */
 #typing-overlay-backdrop {
   position: fixed;
@@ -19,7 +18,13 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2147483646;
-  font-family: 'Lexend Deca', 'Inter', 'SF Pro Text', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Lexend Deca",
+    "Inter",
+    "SF Pro Text",
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: #323437;
   color: #646669;
   width: 1000px;
@@ -90,32 +95,53 @@
 /* ========== Typing Area ========== */
 .overlay-input-wrapper-modern {
   position: relative;
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
   font-size: 24px;
   line-height: 1.5;
   color: #646669;
   cursor: text;
   flex-grow: 1;
   overflow-y: auto;
+  scroll-behavior: auto;
+  overflow-anchor: none;
 }
 
 .overlay-text-display-modern {
-  word-break: break-word;
   user-select: none;
   min-height: 100px;
   position: relative;
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+  word-break: normal;
+  overflow-wrap: normal;
+  white-space: normal;
+  overflow-anchor: none;
+}
+
+.word {
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .char {
   transition: color 0.1s;
-  padding: 0 1px;
+  padding: 0 0.5px;
+  margin: 0 0.1px;
+}
+.char.space {
+  padding: 0 3px; /* Extra width for spaces to avoid 'stuck together' look */
 }
 .char.done {
   color: #d1d0c5;
 }
 .char.error {
   color: #ca4754;
-  background: rgba(202, 71, 84, 0.15); /* Slight background for errors like Monkeytype */
+  background: rgba(
+    202,
+    71,
+    84,
+    0.15
+  ); /* Slight background for errors like Monkeytype */
   border-radius: 3px;
 }
 
@@ -126,7 +152,9 @@
   height: 1.1em;
   background-color: #e2b714;
   border-radius: 1px;
-  transition: left 0.1s ease, top 0.1s ease;
+  transition:
+    left 0.1s ease,
+    top 0.1s ease;
   animation: cursor-blink 1s infinite step-end;
   pointer-events: none;
   z-index: 10;
@@ -138,8 +166,13 @@
 }
 
 @keyframes cursor-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 /* ========== Custom Scrollbar ========== */
@@ -159,13 +192,14 @@
 
 /* ========== Hidden Input ========== */
 .overlay-hidden-input {
-  position: absolute;
+  position: fixed;
   opacity: 0;
   width: 1px;
   height: 1px;
-  top: 0;
-  left: 0;
+  top: -9999px;
+  left: -9999px;
   z-index: -1;
+  pointer-events: none;
 }
 
 /* ========== Controls ========== */
@@ -188,7 +222,9 @@
   font-family: inherit;
   cursor: pointer;
   border-radius: 6px;
-  transition: color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s;
 }
 .overlay-btn-modern:hover {
   color: #d1d0c5;
@@ -235,8 +271,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .results-main {
@@ -306,7 +348,9 @@
   cursor: pointer;
   padding: 12px;
   border-radius: 8px;
-  transition: color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -323,7 +367,10 @@
 }
 
 /* Blur underlying page when overlay active */
-body.typing-overlay-active > *:not(#typing-overlay-backdrop):not(#typing-overlay-panel):not(#typing-toast) {
+body.typing-overlay-active
+  > *:not(#typing-overlay-backdrop):not(#typing-overlay-panel):not(
+    #typing-toast
+  ) {
   filter: blur(4px);
   pointer-events: none;
 }
@@ -333,18 +380,24 @@ body.typing-overlay-active > *:not(#typing-overlay-backdrop):not(#typing-overlay
   position: absolute;
   z-index: 2147483647;
   cursor: pointer;
-  background: #323437;
-  color: #e2b714;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  background: #323437 !important;
+  color: #e2b714 !important;
+  border-radius: 50% !important;
+  width: 45px !important;
+  height: 45px !important;
   display: none;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-  border: 1.5px solid #e2b714;
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, box-shadow 0.2s;
-  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+  border: 2px solid #e2b714 !important;
+  transition:
+    transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    background 0.2s,
+    box-shadow 0.2s !important;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 #typepulse-floating-btn:hover {
@@ -355,11 +408,18 @@ body.typing-overlay-active > *:not(#typing-overlay-backdrop):not(#typing-overlay
 }
 
 #typepulse-floating-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 22px !important;
+  height: 22px !important;
+  pointer-events: none !important;
 }
 
 @keyframes popIn {
-  from { transform: scale(0); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }

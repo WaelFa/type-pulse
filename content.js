@@ -19,6 +19,10 @@ let state = {
 let overlayPanel = null;
 let overlayBackdrop = null;
 let floatingBtn = null;
+let caretUpdateTimer = null;
+let lastScrollTarget = null;
+let lastCaretLineTop = null;
+let lastMeasuredIndex = 0;
 
 function createFloatingButton() {
   if (floatingBtn) return;
@@ -72,7 +76,7 @@ function handleMouseUp(e) {
       const rect = range.getBoundingClientRect();
       
       // Position the button above the selection, centered
-      const x = rect.left + (rect.width / 2) - 20 + window.scrollX;
+      const x = rect.left + (rect.width / 2) - 22.5 + window.scrollX;
       const y = rect.top - 50 + window.scrollY;
       
       showFloatingButton(x, y);
@@ -144,8 +148,8 @@ function createOverlayPanel() {
     <div class="overlay-input-wrapper-modern" id="overlay-input-wrapper">
       <div class="overlay-text-display-modern" id="overlay-text-display"></div>
       <div id="overlay-caret"></div>
-      <input class="overlay-hidden-input" id="overlay-textarea" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
     </div>
+    <input class="overlay-hidden-input" id="overlay-textarea" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
     <div class="overlay-controls-modern">
       <button id="overlay-reset-btn" class="overlay-btn-modern" title="Restart Text">
         <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
@@ -220,21 +224,58 @@ function renderTextDisplay() {
   if (!display) return;
 
   let html = '';
-  // Span per character for perfect caret positioning
+  let currentWord = '';
+
+  // Group characters by word so line wrapping only happens between words.
   for (let i = 0; i < state.targetText.length; i++) {
-    let cls = 'char';
-    if (i < state.currentIndex) {
-      cls += state.errorPositions.has(i) ? ' error' : ' done';
+    const char = state.targetText[i];
+
+    if (char === ' ') {
+      if (currentWord) {
+        html += `<span class="word">${currentWord}</span>`;
+        currentWord = '';
+      }
+      html += renderCharSpan(i, char);
+      continue;
     }
-    const ch = state.targetText[i] === ' ' ? '&nbsp;' : escapeHtml(state.targetText[i]);
-    html += `<span class="${cls}" id="char-${i}">${ch}</span>`;
+
+    currentWord += renderCharSpan(i, char);
   }
+
+  if (currentWord) {
+    html += `<span class="word">${currentWord}</span>`;
+  }
+
   // Add a placeholder span at the end for the caret when text is finished
   html += `<span id="char-end" style="display:inline-block; width:1px; height:1em;"></span>`;
   display.innerHTML = html;
-  
-  // We need a small timeout to allow the browser to paint spans before getting offsetLeft
-  setTimeout(updateCaretPosition, 10);
+
+  scheduleCaretUpdate();
+}
+
+function updateTextDisplayState() {
+  for (let i = 0; i < state.targetText.length; i++) {
+    const charEl = document.getElementById(`char-${i}`);
+    if (!charEl) continue;
+
+    const isSpace = state.targetText[i] === ' ';
+    let cls = isSpace ? 'char space' : 'char';
+    if (i < state.currentIndex) {
+      cls += state.errorPositions.has(i) ? ' error' : ' done';
+    }
+    charEl.className = cls;
+  }
+
+  scheduleCaretUpdate();
+}
+
+function scheduleCaretUpdate() {
+  // Wait until layout settles before measuring character positions.
+  if (caretUpdateTimer) clearTimeout(caretUpdateTimer);
+  caretUpdateTimer = setTimeout(() => {
+    caretUpdateTimer = null;
+    updateCaretPosition();
+  }, 10);
 }
 
 function updateCaretPosition() {
@@ -256,24 +297,59 @@ function updateCaretPosition() {
     caret.classList.remove('typing');
   }
 
-  // Scroll to follow the caret
+  // Keep the active line in a stable viewport zone instead of threshold-based bouncing.
   if (charEl) {
     const wrapper = document.getElementById('overlay-input-wrapper');
     if (wrapper) {
-      const topPos = charEl.offsetTop;
-      const height = wrapper.offsetHeight;
-      const currentScroll = wrapper.scrollTop;
-
-      // If caret is below the visible area or too close to bottom, scroll down
-      if (topPos > currentScroll + height - 100) {
-        wrapper.scrollTo({ top: topPos - 100, behavior: 'smooth' });
-      } 
-      // If caret is above the visible area, scroll up
-      else if (topPos < currentScroll + 50) {
-        wrapper.scrollTo({ top: Math.max(0, topPos - 50), behavior: 'smooth' });
-      }
+      syncScrollPosition(wrapper, charEl);
     }
   }
+}
+
+function renderCharSpan(index, ch) {
+  const isSpace = ch === ' ';
+  let cls = isSpace ? 'char space' : 'char';
+  if (index < state.currentIndex) {
+    cls += state.errorPositions.has(index) ? ' error' : ' done';
+  }
+  const content = isSpace ? '&nbsp;' : escapeHtml(ch);
+  return `<span class="${cls}" id="char-${index}">${content}</span>`;
+}
+
+function syncScrollPosition(wrapper, charEl) {
+  const currentScrollTop = wrapper.scrollTop;
+  const currentLineTop = charEl.offsetTop;
+  const maxScrollTop = Math.max(0, wrapper.scrollHeight - wrapper.clientHeight);
+  const movingBackward = state.currentIndex < lastMeasuredIndex;
+  let nextScrollTop = null;
+
+  // typing.com-style behavior: when the caret advances onto a new rendered line,
+  // smoothly scroll so that new line becomes the first visible line.
+  if (
+    lastCaretLineTop !== null &&
+    currentLineTop > lastCaretLineTop &&
+    currentLineTop > currentScrollTop
+  ) {
+    nextScrollTop = currentLineTop;
+  } else if (movingBackward && currentLineTop < currentScrollTop) {
+    nextScrollTop = currentLineTop;
+  }
+
+  lastCaretLineTop = currentLineTop;
+  lastMeasuredIndex = state.currentIndex;
+
+  if (nextScrollTop === null) return;
+
+  nextScrollTop = Math.max(0, Math.min(maxScrollTop, nextScrollTop));
+
+  if (lastScrollTarget !== null && Math.abs(lastScrollTarget - nextScrollTop) < 1) return;
+  if (Math.abs(currentScrollTop - nextScrollTop) < 1) {
+    lastScrollTarget = nextScrollTop;
+    return;
+  }
+
+  lastScrollTarget = nextScrollTop;
+  wrapper.scrollTo({ top: nextScrollTop, behavior: 'smooth' });
 }
 
 function escapeHtml(ch) {
@@ -320,7 +396,7 @@ function handleInput(e) {
 
   // Update stats
   updateStats();
-  renderTextDisplay();
+  updateTextDisplayState();
 
   // Check completion: finished whenever typed length matches target
   if (typed.length >= state.targetText.length) {
@@ -492,11 +568,24 @@ function resetUI() {
   
   const statsTop = document.getElementById('overlay-stats-top');
   if (statsTop) statsTop.classList.remove('typing-started');
+
+  const wrapper = document.getElementById('overlay-input-wrapper');
+  if (wrapper) wrapper.scrollTop = 0;
+  lastScrollTarget = null;
+  lastCaretLineTop = null;
+  lastMeasuredIndex = 0;
   
   renderTextDisplay();
 }
 
 function removePanels() {
+  if (caretUpdateTimer) {
+    clearTimeout(caretUpdateTimer);
+    caretUpdateTimer = null;
+  }
+  lastScrollTarget = null;
+  lastCaretLineTop = null;
+  lastMeasuredIndex = 0;
   if (overlayPanel) {
     overlayPanel.remove();
     overlayPanel = null;
