@@ -1,4 +1,4 @@
-# Reading Type Trainer — Chrome Extension
+# TypePulse — Chrome Extension
 
 A Chrome extension that turns any article into a typing workout. Select text on a page, open the overlay, and type what you see. Real-time stats: WPM, accuracy, errors, and time.
 
@@ -23,15 +23,16 @@ typing-overlay-extension/
 ## How It Works
 
 1. **Select text** on any webpage you want to practice typing.
-2. **Click the extension icon** in the toolbar.
-3. **Click "Start Typing"** in the popup.
-4. An overlay appears showing the selected text character-by-character. A floating stats panel tracks your WPM, accuracy, errors, time, and progress.
-5. Type the text. Characters turn green when correct, red when wrong. A cursor highlights your current position.
-6. Stats persist to `chrome.storage.local` and appear in the popup on next open.
+2. **Start the test** by clicking the floating TypePulse button near the selection, or by right-clicking the selection and choosing `TypePulse: Start typing selection`.
+3. An overlay appears showing the selected text for typing practice, with live WPM, accuracy, and timer stats.
+4. Type the text. Characters turn green when correct, red when wrong. A cursor highlights your current position.
+5. Stats persist to `chrome.storage.local` and appear in the popup on next open.
 
 ## Current Features
 
 - Highlight-and-type workflow
+- Floating launch button on selected text
+- Right-click context menu launch
 - Real-time WPM calculation (standard: 5 chars = 1 word)
 - Live accuracy percentage
 - Error tracking with position highlighting
@@ -81,7 +82,7 @@ typing-overlay-extension/
 1. Open Chrome and go to `chrome://extensions/`
 2. Enable **Developer mode** (toggle in top-right)
 3. Click **Load unpacked**
-4. Select the `typing-overlay-extension` folder
+4. Select the `type-pulse` folder
 5. The extension icon should appear in the toolbar
 
 ## Keyboard Shortcuts

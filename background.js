@@ -13,9 +13,10 @@ chrome.runtime.onInstalled.addListener(() => {
 // Handle context menu click
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "start-typing") {
-    // Selection text is already captured by the context menu
-    // but the overlay can also read it from the window selection
-    chrome.tabs.sendMessage(tab.id, { action: 'open_overlay' });
+    chrome.tabs.sendMessage(tab.id, {
+      action: 'open_overlay',
+      selectedText: info.selectionText || ''
+    });
   }
 });
 

@@ -7,7 +7,13 @@
 
 body {
   width: 320px;
-  font-family: 'Lexend Deca', 'Inter', 'SF Pro Text', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Avenir Next",
+    "Segoe UI",
+    "Helvetica Neue",
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: #323437;
   color: #d1d0c5;
   padding: 0;

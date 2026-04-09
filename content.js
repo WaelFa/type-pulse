@@ -25,6 +25,8 @@ let lastScrollTarget = null;
 let lastCaretLineTop = null;
 let lastMeasuredIndex = 0;
 let showSelectionButton = true;
+let overlayStylesPromise = null;
+let overlayCssTextPromise = null;
 
 chrome.storage.local.get(['showSelectionButton'], (data) => {
   showSelectionButton = data.showSelectionButton !== false;
@@ -36,6 +38,31 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   showSelectionButton = changes.showSelectionButton.newValue !== false;
   if (!showSelectionButton) hideFloatingButton();
 });
+
+function ensureOverlayStyles() {
+  if (overlayStylesPromise) return overlayStylesPromise;
+
+  overlayStylesPromise = (async () => {
+    const existing = document.getElementById('typepulse-overlay-styles');
+    if (existing) return;
+
+    if (!overlayCssTextPromise) {
+      overlayCssTextPromise = fetch(chrome.runtime.getURL('overlay.css'))
+        .then((response) => {
+          if (!response.ok) throw new Error('Failed to fetch overlay styles.');
+          return response.text();
+        });
+    }
+
+    const cssText = await overlayCssTextPromise;
+    const style = document.createElement('style');
+    style.id = 'typepulse-overlay-styles';
+    style.textContent = cssText;
+    (document.head || document.documentElement).appendChild(style);
+  })();
+
+  return overlayStylesPromise;
+}
 
 function createFloatingButton() {
   if (floatingBtn) return;
@@ -96,8 +123,10 @@ function handleMouseUp(e) {
       // Position the button above the selection, centered
       const x = rect.left + (rect.width / 2) - 22.5 + window.scrollX;
       const y = rect.top - 50 + window.scrollY;
-      
-      showFloatingButton(x, y);
+
+      ensureOverlayStyles()
+        .then(() => showFloatingButton(x, y))
+        .catch(() => hideFloatingButton());
     } else {
       // If clicking outside the button and no text is selected, hide it
       if (floatingBtn && e.target !== floatingBtn && !floatingBtn.contains(e.target)) {
@@ -115,15 +144,22 @@ document.addEventListener('mousedown', (e) => {
   }
 });
 
-function createOverlayPanel() {
+async function createOverlayPanel(selectionOverride = '') {
   hideFloatingButton();
   // Hide any existing panels
   removePanels();
 
   // Get the text the user has highlighted on the page
-  let selection = window.getSelection().toString().trim();
+  let selection = selectionOverride || window.getSelection().toString().trim();
   if (!selection) {
     showToast('Please highlight text on the page first, then click the extension icon.');
+    return;
+  }
+
+  try {
+    await ensureOverlayStyles();
+  } catch (err) {
+    showToast('TypePulse could not load its styles on this page.');
     return;
   }
 
@@ -666,8 +702,10 @@ function showToast(message) {
 // ---------- Message from popup ----------
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'open_overlay') {
-    createOverlayPanel();
-    sendResponse({ ok: true });
+    createOverlayPanel(message.selectedText || '')
+      .then(() => sendResponse({ ok: true }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
   }
   if (message.action === 'selection_button_setting_changed') {
     showSelectionButton = message.enabled !== false;
