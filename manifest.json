@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "TypePulse",
   "description": "Select text on any page, type it out, and track your speed & accuracy in real-time.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "permissions": ["storage", "activeTab", "contextMenus"],
   "action": {
     "default_popup": "popup.html",

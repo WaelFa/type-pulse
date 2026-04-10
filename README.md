@@ -85,6 +85,16 @@ typing-overlay-extension/
 4. Select the `type-pulse` folder
 5. The extension icon should appear in the toolbar
 
+## Build Dist Zip
+
+Run the release script with the target version:
+
+```bash
+./tools/build_dist.sh 1.0.1
+```
+
+This updates `manifest.json` and generates `dist/typepulse-chrome-store-v1.0.1.zip`.
+
 ## Keyboard Shortcuts
 
 | Key    | Action                                   |
