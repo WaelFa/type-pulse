@@ -1,3 +1,14 @@
+/* ========== CSS Custom Properties (Theme) ========== */
+:root {
+  --bg-color: #323437;
+  --text-color: #d1d0c5;
+  --sub-color: #646669;
+  --main-color: #e2b714;
+  --caret-color: #e2b714;
+  --error-color: #ca4754;
+  --surface-color: #2c2e31;
+}
+
 /* ========== Full Screen Backdrop ========== */
 #typing-overlay-backdrop {
   position: fixed;
@@ -24,8 +35,8 @@
     system-ui,
     -apple-system,
     sans-serif;
-  background: #323437;
-  color: #646669;
+  background: var(--bg-color);
+  color: var(--sub-color);
   width: 1000px;
   max-width: 90vw;
   height: min-content;
@@ -44,7 +55,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #646669;
+  color: var(--sub-color);
   font-size: 1.2rem;
 }
 
@@ -52,14 +63,14 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #e2b714;
+  color: var(--main-color);
   font-weight: bold;
 }
 
 .overlay-stats-top {
   display: flex;
   gap: 24px;
-  opacity: 0; /* Hidden initially, shown when typing starts */
+  opacity: 0;
   transition: opacity 0.3s ease;
 }
 .overlay-stats-top.typing-started {
@@ -73,7 +84,7 @@
   font-size: 1rem;
 }
 .stat-val {
-  color: #d1d0c5;
+  color: var(--text-color);
   font-size: 1.5rem;
   font-weight: bold;
   font-variant-numeric: tabular-nums;
@@ -81,14 +92,14 @@
 
 .overlay-close-modern {
   cursor: pointer;
-  color: #646669;
+  color: var(--sub-color);
   transition: color 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .overlay-close-modern:hover {
-  color: #ca4754;
+  color: var(--error-color);
 }
 
 /* ========== Typing Area ========== */
@@ -105,7 +116,7 @@
     monospace;
   font-size: 24px;
   line-height: 1.5;
-  color: #646669;
+  color: var(--sub-color);
   cursor: text;
   flex-grow: 1;
   overflow-y: auto;
@@ -136,19 +147,14 @@
   margin: 0 0.1px;
 }
 .char.space {
-  padding: 0 3px; /* Extra width for spaces to avoid 'stuck together' look */
+  padding: 0 3px;
 }
 .char.done {
-  color: #d1d0c5;
+  color: var(--text-color);
 }
 .char.error {
-  color: #ca4754;
-  background: rgba(
-    202,
-    71,
-    84,
-    0.15
-  ); /* Slight background for errors like Monkeytype */
+  color: var(--error-color);
+  background: rgba(202, 71, 84, 0.15);
   border-radius: 3px;
 }
 
@@ -157,7 +163,7 @@
   position: absolute;
   width: 2px;
   height: 1.1em;
-  background-color: #e2b714;
+  background-color: var(--caret-color);
   border-radius: 1px;
   transition:
     left 0.1s ease,
@@ -224,7 +230,7 @@
   padding: 10px 20px;
   background: transparent;
   border: none;
-  color: #646669;
+  color: var(--sub-color);
   font-size: 1rem;
   font-family: inherit;
   cursor: pointer;
@@ -234,8 +240,8 @@
     background 0.2s;
 }
 .overlay-btn-modern:hover {
-  color: #d1d0c5;
-  background: #2c2e31;
+  color: var(--text-color);
+  background: var(--surface-color);
 }
 
 /* ========== Toast ========== */
@@ -246,8 +252,8 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 14px 28px;
-  background: #e2b714;
-  color: #323437;
+  background: var(--main-color);
+  color: var(--bg-color);
   font-size: 15px;
   font-weight: 600;
   border-radius: 8px;
@@ -295,7 +301,7 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  color: #e2b714;
+  color: var(--main-color);
   font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -308,7 +314,7 @@
   margin: 0;
   font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1;
-  color: #d1d0c5;
+  color: var(--text-color);
   font-weight: 600;
 }
 
@@ -342,11 +348,11 @@
   gap: 6px;
   padding: 18px 20px;
   border-radius: 8px !important;
-  background: #2c2e31;
+  background: var(--surface-color);
 }
 
 .result-highlight {
-  background: #2c2e31;
+  background: var(--surface-color);
 }
 
 .result-big-label {
@@ -363,7 +369,7 @@
 .result-big-val {
   font-size: clamp(3rem, 5vw, 4.2rem);
   font-weight: 600;
-  color: #e2b714;
+  color: var(--main-color);
   line-height: 0.95;
 }
 
@@ -380,7 +386,7 @@
   gap: 8px;
   padding: 16px 18px;
   border-radius: 8px !important;
-  background: #2c2e31;
+  background: var(--surface-color);
 }
 
 .result-small-label {
@@ -397,7 +403,7 @@
 .result-small-val {
   font-size: clamp(1.7rem, 2.8vw, 2.4rem);
   font-weight: 600;
-  color: #d1d0c5;
+  color: var(--text-color);
   line-height: 1;
 }
 
@@ -412,7 +418,7 @@
 .footer-btn {
   background: transparent;
   border: none;
-  color: #646669;
+  color: var(--sub-color);
   cursor: pointer;
   padding: 10px 20px;
   border-radius: 6px;
@@ -427,18 +433,18 @@
 }
 
 .footer-btn:hover {
-  color: #d1d0c5;
-  background: #2c2e31;
+  color: var(--text-color);
+  background: var(--surface-color);
 }
 
 .footer-btn-primary {
   background: transparent;
-  color: #646669;
+  color: var(--sub-color);
 }
 
 .footer-btn-primary:hover {
-  color: #d1d0c5;
-  background: #2c2e31;
+  color: var(--text-color);
+  background: var(--surface-color);
 }
 
 @media (max-width: 760px) {
@@ -482,8 +488,8 @@ body.typing-overlay-active
   position: absolute;
   z-index: 2147483647;
   cursor: pointer;
-  background: #323437 !important;
-  color: #e2b714 !important;
+  background: var(--bg-color) !important;
+  color: var(--main-color) !important;
   border-radius: 50% !important;
   width: 36px !important;
   height: 36px !important;
@@ -491,7 +497,7 @@ body.typing-overlay-active
   align-items: center !important;
   justify-content: center !important;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
-  border: 2px solid #e2b714 !important;
+  border: 2px solid var(--main-color) !important;
   transition:
     transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
     background 0.2s,
@@ -504,8 +510,8 @@ body.typing-overlay-active
 
 #typepulse-floating-btn:hover {
   transform: scale(1.15);
-  background: #e2b714;
-  color: #323437;
+  background: var(--main-color);
+  color: var(--bg-color);
   box-shadow: 0 6px 20px rgba(226, 183, 20, 0.3);
 }
 
@@ -524,4 +530,95 @@ body.typing-overlay-active
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* ========== Subtle Footer (results screen) ========== */
+.results-footer-subtle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(100, 102, 105, 0.15);
+  flex-wrap: wrap;
+  white-space: normal;
+}
+
+.results-footer-subtle .footer-subtle-msg {
+  font-size: 11px;
+  color: var(--sub-color, #646669);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.footer-subtle-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--main-color, #e2b714);
+  text-decoration: none;
+  font-weight: 500;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.footer-subtle-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.footer-subtle-link svg {
+  flex-shrink: 0;
+  display: block;
+}
+
+.footer-subtle-sep {
+  font-size: 10px;
+  color: var(--sub-color, #646669);
+  opacity: 0.3;
+  line-height: 1;
+}
+/* ========== Loading Indicator ========== */
+#typepulse-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #323437; /* Consistent with popup/history bg */
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #e2b714;
+  font-family: "Syne", sans-serif;
+  transition: opacity 0.3s ease;
+  pointer-events: all;
+}
+
+.tp-loader-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid rgba(226, 183, 20, 0.1);
+  border-top: 4px solid #e2b714;
+  border-radius: 50%;
+  animation: tp-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes tp-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.tp-loader-text {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #d1d0c5;
 }

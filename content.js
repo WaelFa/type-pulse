@@ -5,7 +5,7 @@ let state = {
   enabled: false,
   active: false,
   completed: false,
-  targetText: '',
+  targetText: "",
   currentIndex: 0,
   startTime: null,
   correctKeystrokes: 0,
@@ -27,36 +27,175 @@ let lastMeasuredIndex = 0;
 let showSelectionButton = true;
 let overlayStylesPromise = null;
 let overlayCssTextPromise = null;
+let themeStyleEl = null;
 
-chrome.storage.local.get(['showSelectionButton'], (data) => {
+// ---------- Theme Definitions ----------
+const themes = {
+  dark: {
+    bg: "#323437",
+    text: "#d1d0c5",
+    sub: "#646669",
+    main: "#e2b714",
+    caret: "#e2b714",
+    error: "#ca4754",
+  },
+  latte: {
+    bg: "#f6e6d8",
+    text: "#454345",
+    sub: "#826d64",
+    main: "#7f5539",
+    caret: "#7f5539",
+    error: "#e59e80",
+  },
+  matcha: {
+    bg: "#ebf9f0",
+    text: "#b1d3e0",
+    sub: "#82cdaa",
+    main: "#1c2020",
+    caret: "#1c2020",
+    error: "#c38080",
+  },
+  bingus: {
+    bg: "#221b4f",
+    text: "#4e2e7c",
+    sub: "#6800ff",
+    main: "#00ffff",
+    caret: "#00ffff",
+    error: "#ff5577",
+  },
+  carbon: {
+    bg: "#191919",
+    text: "#9b9b9b",
+    sub: "#525252",
+    main: "#c19549",
+    caret: "#c19549",
+    error: "#d04040",
+  },
+  dracula: {
+    bg: "#282a36",
+    text: "#f8f8f2",
+    sub: "#6272a4",
+    main: "#bd93f9",
+    caret: "#bd93f9",
+    error: "#ff5555",
+  },
+  revo: {
+    bg: "#214082",
+    text: "#f6e6d8",
+    sub: "#826d64",
+    main: "#d2a8ff",
+    caret: "#d2a8ff",
+    error: "#ff8080",
+  },
+  honeybee: {
+    bg: "#f5e050",
+    text: "#310808",
+    sub: "#6b441d",
+    main: "#f7b068",
+    caret: "#f7b068",
+    error: "#d14242",
+  },
+};
+
+function darken(hex, amount) {
+  hex = hex.replace("#", "");
+  let r = parseInt(hex.substring(0, 2), 16);
+  let g = parseInt(hex.substring(2, 4), 16);
+  let b = parseInt(hex.substring(4, 6), 16);
+  r = Math.max(0, Math.min(255, r - amount));
+  g = Math.max(0, Math.min(255, g - amount));
+  b = Math.max(0, Math.min(255, b - amount));
+  return "#" + [r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("");
+}
+
+function lighten(hex, amount) {
+  hex = hex.replace("#", "");
+  let r = parseInt(hex.substring(0, 2), 16);
+  let g = parseInt(hex.substring(2, 4), 16);
+  let b = parseInt(hex.substring(4, 6), 16);
+  r = Math.max(0, Math.min(255, r + amount));
+  g = Math.max(0, Math.min(255, g + amount));
+  b = Math.max(0, Math.min(255, b + amount));
+  return "#" + [r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("");
+}
+
+function adjustBrightness(hex, amount) {
+  hex = hex.replace("#", "");
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const lum = (r * 299 + g * 587 + b * 114) / 1000;
+  return lum > 128 ? darken(hex, amount) : lighten(hex, amount);
+}
+
+function applyThemeVars(themeName) {
+  const t = themes[themeName];
+  if (!t) return;
+  if (!themeStyleEl) {
+    themeStyleEl = document.createElement("style");
+    themeStyleEl.id = "typepulse-theme-variables";
+    (document.head || document.documentElement).appendChild(themeStyleEl);
+  }
+  const surface = adjustBrightness(t.bg, 8);
+  themeStyleEl.textContent = `
+    #typing-overlay-panel, .overlay-results-modern {
+      --bg-color: ${t.bg};
+      --text-color: ${t.text};
+      --sub-color: ${t.sub};
+      --main-color: ${t.main};
+      --caret-color: ${t.caret};
+      --error-color: ${t.error};
+      --surface-color: ${surface};
+    }
+    /* Apply to floating button directly since it uses !important */
+    #typepulse-floating-btn {
+      background: ${t.bg} !important;
+      color: ${t.main} !important;
+      border-color: ${t.main} !important;
+    }
+  `;
+}
+
+// Load saved theme on init
+chrome.storage.local.get(["showSelectionButton", "selectedTheme"], (data) => {
   showSelectionButton = data.showSelectionButton !== false;
   if (!showSelectionButton) hideFloatingButton();
+
+  // Apply saved theme immediately
+  const savedTheme = data.selectedTheme || "dark";
+  applyThemeVars(savedTheme);
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== 'local' || !changes.showSelectionButton) return;
-  showSelectionButton = changes.showSelectionButton.newValue !== false;
-  if (!showSelectionButton) hideFloatingButton();
+  if (areaName !== "local") return;
+  if (changes.showSelectionButton) {
+    showSelectionButton = changes.showSelectionButton.newValue !== false;
+    if (!showSelectionButton) hideFloatingButton();
+  }
+  if (changes.selectedTheme) {
+    applyThemeVars(changes.selectedTheme.newValue);
+  }
 });
 
 function ensureOverlayStyles() {
   if (overlayStylesPromise) return overlayStylesPromise;
 
   overlayStylesPromise = (async () => {
-    const existing = document.getElementById('typepulse-overlay-styles');
+    const existing = document.getElementById("typepulse-overlay-styles");
     if (existing) return;
 
     if (!overlayCssTextPromise) {
-      overlayCssTextPromise = fetch(chrome.runtime.getURL('overlay.css'))
-        .then((response) => {
-          if (!response.ok) throw new Error('Failed to fetch overlay styles.');
+      overlayCssTextPromise = fetch(chrome.runtime.getURL("overlay.css")).then(
+        (response) => {
+          if (!response.ok) throw new Error("Failed to fetch overlay styles.");
           return response.text();
-        });
+        },
+      );
     }
 
     const cssText = await overlayCssTextPromise;
-    const style = document.createElement('style');
-    style.id = 'typepulse-overlay-styles';
+    const style = document.createElement("style");
+    style.id = "typepulse-overlay-styles";
     style.textContent = cssText;
     (document.head || document.documentElement).appendChild(style);
   })();
@@ -66,40 +205,40 @@ function ensureOverlayStyles() {
 
 function createFloatingButton() {
   if (floatingBtn) return;
-  floatingBtn = document.createElement('div');
-  floatingBtn.id = 'typepulse-floating-btn';
-  floatingBtn.title = 'Start Typing with TypePulse';
+  floatingBtn = document.createElement("div");
+  floatingBtn.id = "typepulse-floating-btn";
+  floatingBtn.title = "Start Typing with TypePulse";
   floatingBtn.innerHTML = `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
     </svg>
   `;
-  
-  floatingBtn.addEventListener('mousedown', (e) => {
+
+  floatingBtn.addEventListener("mousedown", (e) => {
     e.preventDefault();
     e.stopPropagation();
   });
-  
-  floatingBtn.addEventListener('click', (e) => {
+
+  floatingBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
     hideFloatingButton();
     createOverlayPanel();
   });
-  
+
   document.body.appendChild(floatingBtn);
 }
 
 function showFloatingButton(x, y) {
   if (!floatingBtn) createFloatingButton();
-  floatingBtn.style.display = 'flex';
+  floatingBtn.style.display = "flex";
   floatingBtn.style.left = `${x}px`;
   floatingBtn.style.top = `${y}px`;
 }
 
 function hideFloatingButton() {
   if (floatingBtn) {
-    floatingBtn.style.display = 'none';
+    floatingBtn.style.display = "none";
   }
 }
 
@@ -113,15 +252,15 @@ function handleMouseUp(e) {
 
     const selection = window.getSelection();
     const text = selection.toString().trim();
-    
+
     if (text && text.length > 0) {
       if (overlayPanel) return; // Don't show if overlay is already open
-      
+
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
-      
+
       // Position the button above the selection, centered
-      const x = rect.left + (rect.width / 2) - 22.5 + window.scrollX;
+      const x = rect.left + rect.width / 2 - 22.5 + window.scrollX;
       const y = rect.top - 50 + window.scrollY;
 
       ensureOverlayStyles()
@@ -129,22 +268,31 @@ function handleMouseUp(e) {
         .catch(() => hideFloatingButton());
     } else {
       // If clicking outside the button and no text is selected, hide it
-      if (floatingBtn && e.target !== floatingBtn && !floatingBtn.contains(e.target)) {
+      if (
+        floatingBtn &&
+        e.target !== floatingBtn &&
+        !floatingBtn.contains(e.target)
+      ) {
         hideFloatingButton();
       }
     }
   }, 10);
 }
 
-document.addEventListener('mouseup', handleMouseUp);
-window.addEventListener('resize', hideFloatingButton);
-document.addEventListener('mousedown', (e) => {
-  if (floatingBtn && e.target !== floatingBtn && !floatingBtn.contains(e.target)) {
-     // Optional: could hide on mousedown too, but mouseup handles it
+document.addEventListener("mouseup", handleMouseUp);
+window.addEventListener("resize", hideFloatingButton);
+document.addEventListener("mousedown", (e) => {
+  if (
+    floatingBtn &&
+    e.target !== floatingBtn &&
+    !floatingBtn.contains(e.target)
+  ) {
+    // Optional: could hide on mousedown too, but mouseup handles it
   }
 });
 
-async function createOverlayPanel(selectionOverride = '') {
+async function createOverlayPanel(selectionOverride = "") {
+  showLoadingOverlay();
   hideFloatingButton();
   // Hide any existing panels
   removePanels();
@@ -152,37 +300,41 @@ async function createOverlayPanel(selectionOverride = '') {
   // Get the text the user has highlighted on the page
   let selection = selectionOverride || window.getSelection().toString().trim();
   if (!selection) {
-    showToast('Please highlight text on the page first, then click the extension icon.');
+    hideLoadingOverlay();
+    showToast(
+      "Please highlight text on the page first, then click the extension icon.",
+    );
     return;
   }
 
   try {
     await ensureOverlayStyles();
   } catch (err) {
-    showToast('TypePulse could not load its styles on this page.');
+    hideLoadingOverlay();
+    showToast("TypePulse could not load its styles on this page.");
     return;
   }
 
   // Clean up the text: normalize whitespace, remove extra newlines
-  state.targetText = selection.split(/\s+/).join(' ').replace(/\s+/g, ' ');
+  state.targetText = selection.split(/\s+/).join(" ").replace(/\s+/g, " ");
 
   // Add active class for body blur
-  document.body.classList.add('typing-overlay-active');
+  document.body.classList.add("typing-overlay-active");
 
   // --- Backdrop ---
-  overlayBackdrop = document.createElement('div');
-  overlayBackdrop.id = 'typing-overlay-backdrop';
+  overlayBackdrop = document.createElement("div");
+  overlayBackdrop.id = "typing-overlay-backdrop";
   document.body.appendChild(overlayBackdrop);
 
   // --- Main overlay panel ---
-  overlayPanel = document.createElement('div');
-  overlayPanel.id = 'typing-overlay-panel';
-  
+  overlayPanel = document.createElement("div");
+  overlayPanel.id = "typing-overlay-panel";
+
   // Block propagation to prevent the page from reacting to clicks
-  overlayPanel.addEventListener('mousedown', (e) => e.stopPropagation());
-  overlayPanel.addEventListener('keydown', (e) => e.stopPropagation());
-  overlayPanel.addEventListener('keyup', (e) => e.stopPropagation());
-  overlayPanel.addEventListener('keypress', (e) => e.stopPropagation());
+  overlayPanel.addEventListener("mousedown", (e) => e.stopPropagation());
+  overlayPanel.addEventListener("keydown", (e) => e.stopPropagation());
+  overlayPanel.addEventListener("keyup", (e) => e.stopPropagation());
+  overlayPanel.addEventListener("keypress", (e) => e.stopPropagation());
 
   overlayPanel.innerHTML = `
     <div class="overlay-header-modern">
@@ -219,78 +371,113 @@ async function createOverlayPanel(selectionOverride = '') {
   renderTextDisplay();
 
   // --- Bind events on the hidden input ---
-  const textarea = document.getElementById('overlay-textarea');
+  const textarea = document.getElementById("overlay-textarea");
   textarea.focus();
 
-  textarea.addEventListener('input', handleInput);
-  
+  textarea.addEventListener("input", handleInput);
+
   // Prevent tabbing out
-  textarea.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
+  textarea.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") {
       e.preventDefault();
       resetSession();
     }
   });
 
   // Keep focus on the hidden input even if user clicks elsewhere in the overlay
-  overlayPanel.addEventListener('click', () => {
+  overlayPanel.addEventListener("click", () => {
     textarea.focus();
   });
-  overlayBackdrop.addEventListener('click', () => {
+  overlayBackdrop.addEventListener("click", () => {
     finishSession();
   });
 
   // Close / reset buttons
-  document.getElementById('overlay-close-btn').addEventListener('click', finishSession);
-  document.getElementById('overlay-reset-btn').addEventListener('click', resetSession);
+  document
+    .getElementById("overlay-close-btn")
+    .addEventListener("click", finishSession);
+  document
+    .getElementById("overlay-reset-btn")
+    .addEventListener("click", resetSession);
 
   // Capture ALL keyboard events so the underlying page doesn't receive them
-  window.addEventListener('keydown', captureWindowKeys, true);
-  
+  window.addEventListener("keydown", captureWindowKeys, true);
+
   // Resize handler to adjust caret position
-  window.addEventListener('resize', updateCaretPosition);
+  window.addEventListener("resize", updateCaretPosition);
+
+  hideLoadingOverlay();
 }
+
+function showLoadingOverlay() {
+  let loader = document.getElementById("typepulse-loader");
+  if (loader) return;
+
+  loader = document.createElement("div");
+  loader.id = "typepulse-loader";
+  loader.innerHTML = `
+    <div class="tp-loader-spinner"></div>
+    <div class="tp-loader-text">Loading your test...</div>
+  `;
+  document.body.appendChild(loader);
+}
+
+function hideLoadingOverlay() {
+  const loader = document.getElementById("typepulse-loader");
+  if (loader) {
+    loader.style.opacity = "0";
+    setTimeout(() => {
+      if (loader.parentNode) loader.remove();
+    }, 300);
+  }
+}
+
 
 function captureWindowKeys(e) {
   if (!overlayPanel) return; // double check
   // Do not affect the developer tools or reload
-  if (e.key === 'F12' || (e.metaKey && e.key === 'r') || (e.ctrlKey && e.key === 'r')) return;
+  if (
+    e.key === "F12" ||
+    (e.metaKey && e.key === "r") ||
+    (e.ctrlKey && e.key === "r")
+  )
+    return;
   // If user presses Escape, let it close the modal
-  if (e.key === 'Escape' && e.type === 'keydown') {
+  if (e.key === "Escape" && e.type === "keydown") {
     finishSession();
     e.preventDefault();
     e.stopPropagation();
     return;
   }
-  
+
   // To absolutely prevent underlying page from doing things with shortcuts,
   // we check if focus is NOT in our textarea, and put it there.
-  const textarea = document.getElementById('overlay-textarea');
+  const textarea = document.getElementById("overlay-textarea");
   if (document.activeElement !== textarea) {
     if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-       textarea.focus();
+      textarea.focus();
     }
   }
 }
 
 function renderTextDisplay() {
-  const display = document.getElementById('overlay-text-display');
+  const display = document.getElementById("overlay-text-display");
   if (!display) return;
 
-  let html = '';
-  let currentSegment = '';
+  let html = "";
+  let currentSegment = "";
 
   // Keep spaces attached to the preceding word so new lines never start with a space.
   for (let i = 0; i < state.targetText.length; i++) {
     const char = state.targetText[i];
     currentSegment += renderCharSpan(i, char);
 
-    if (char === ' ') {
+    if (char === " ") {
       if (currentSegment) {
         html += `<span class="word">${currentSegment}</span>`;
-        currentSegment = '';
+        currentSegment = "";
       }
-    } 
+    }
   }
 
   if (currentSegment) {
@@ -309,10 +496,10 @@ function updateTextDisplayState() {
     const charEl = document.getElementById(`char-${i}`);
     if (!charEl) continue;
 
-    const isSpace = state.targetText[i] === ' ';
-    let cls = isSpace ? 'char space' : 'char';
+    const isSpace = state.targetText[i] === " ";
+    let cls = isSpace ? "char space" : "char";
     if (i < state.currentIndex) {
-      cls += state.errorPositions.has(i) ? ' error' : ' done';
+      cls += state.errorPositions.has(i) ? " error" : " done";
     }
     charEl.className = cls;
   }
@@ -330,27 +517,30 @@ function scheduleCaretUpdate() {
 }
 
 function updateCaretPosition() {
-  const caret = document.getElementById('overlay-caret');
-  const display = document.getElementById('overlay-text-display');
+  const caret = document.getElementById("overlay-caret");
+  const display = document.getElementById("overlay-text-display");
   if (!caret || !display) return;
 
-  const charEl = document.getElementById(`char-${state.currentIndex}`) || document.getElementById('char-end');
+  const charEl =
+    document.getElementById(`char-${state.currentIndex}`) ||
+    document.getElementById("char-end");
   if (charEl) {
-    caret.style.left = charEl.offsetLeft + 'px';
+    caret.style.left = charEl.offsetLeft + "px";
     // Center the caret vertically relative to the character
     const charHeight = charEl.offsetHeight || 32;
-    caret.style.top = (charEl.offsetTop + (charHeight - caret.offsetHeight) / 2) + 'px';
+    caret.style.top =
+      charEl.offsetTop + (charHeight - caret.offsetHeight) / 2 + "px";
   }
-  
+
   if (state.active) {
-    caret.classList.add('typing');
+    caret.classList.add("typing");
   } else {
-    caret.classList.remove('typing');
+    caret.classList.remove("typing");
   }
 
   // Keep the active line in a stable viewport zone instead of threshold-based bouncing.
   if (charEl) {
-    const wrapper = document.getElementById('overlay-input-wrapper');
+    const wrapper = document.getElementById("overlay-input-wrapper");
     if (wrapper) {
       syncScrollPosition(wrapper, charEl);
     }
@@ -358,12 +548,12 @@ function updateCaretPosition() {
 }
 
 function renderCharSpan(index, ch) {
-  const isSpace = ch === ' ';
-  let cls = isSpace ? 'char space' : 'char';
+  const isSpace = ch === " ";
+  let cls = isSpace ? "char space" : "char";
   if (index < state.currentIndex) {
-    cls += state.errorPositions.has(index) ? ' error' : ' done';
+    cls += state.errorPositions.has(index) ? " error" : " done";
   }
-  const content = isSpace ? '&nbsp;' : escapeHtml(ch);
+  const content = isSpace ? "&nbsp;" : escapeHtml(ch);
   return `<span class="${cls}" id="char-${index}">${content}</span>`;
 }
 
@@ -393,18 +583,28 @@ function syncScrollPosition(wrapper, charEl) {
 
   nextScrollTop = Math.max(0, Math.min(maxScrollTop, nextScrollTop));
 
-  if (lastScrollTarget !== null && Math.abs(lastScrollTarget - nextScrollTop) < 1) return;
+  if (
+    lastScrollTarget !== null &&
+    Math.abs(lastScrollTarget - nextScrollTop) < 1
+  )
+    return;
   if (Math.abs(currentScrollTop - nextScrollTop) < 1) {
     lastScrollTarget = nextScrollTop;
     return;
   }
 
   lastScrollTarget = nextScrollTop;
-  wrapper.scrollTo({ top: nextScrollTop, behavior: 'smooth' });
+  wrapper.scrollTo({ top: nextScrollTop, behavior: "smooth" });
 }
 
 function escapeHtml(ch) {
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  const map = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  };
   return map[ch] || ch;
 }
 
@@ -416,8 +616,8 @@ function handleInput(e) {
     state.active = true;
     state.startTime = Date.now();
     startTimer();
-    const statsTop = document.getElementById('overlay-stats-top');
-    if (statsTop) statsTop.classList.add('typing-started');
+    const statsTop = document.getElementById("overlay-stats-top");
+    if (statsTop) statsTop.classList.add("typing-started");
   }
 
   const textarea = e.target;
@@ -463,21 +663,25 @@ function startTimer() {
   state.timerId = setInterval(() => {
     if (!state.active) return;
     const elapsed = (Date.now() - state.startTime) / 1000;
-    const timeEl = document.getElementById('stats-time');
+    const timeEl = document.getElementById("stats-time");
     if (timeEl) timeEl.textContent = Math.floor(elapsed);
 
     // Live WPM update
-    const wpm = state.currentIndex > 0 ? Math.round((state.currentIndex / 5) / (elapsed / 60)) : 0;
-    const wpmEl = document.getElementById('stats-wpm');
+    const wpm =
+      state.currentIndex > 0
+        ? Math.round(state.currentIndex / 5 / (elapsed / 60))
+        : 0;
+    const wpmEl = document.getElementById("stats-wpm");
     if (wpmEl) wpmEl.textContent = wpm;
   }, 1000);
 }
 
 function updateStats() {
   const total = state.totalKeystrokes;
-  const accuracy = total > 0 ? Math.round((state.correctKeystrokes / total) * 100) : 100;
-  
-  const accEl = document.getElementById('stats-accuracy');
+  const accuracy =
+    total > 0 ? Math.round((state.correctKeystrokes / total) * 100) : 100;
+
+  const accEl = document.getElementById("stats-accuracy");
   if (accEl) accEl.textContent = accuracy;
 }
 
@@ -485,12 +689,19 @@ function calculateSessionStats() {
   const elapsedMinutes = (Date.now() - state.startTime) / 1000 / 60;
   const elapsedSeconds = (Date.now() - state.startTime) / 1000;
   // Monkeytype WPM = (chars / 5) / minutes
-  const wpm = elapsedMinutes > 0 ? Math.round((state.targetText.length / 5) / elapsedMinutes) : 0;
+  const wpm =
+    elapsedMinutes > 0
+      ? Math.round(state.targetText.length / 5 / elapsedMinutes)
+      : 0;
   // Raw WPM = (total keystrokes / 5) / minutes
-  const rawWpm = elapsedMinutes > 0 ? Math.round((state.totalKeystrokes / 5) / elapsedMinutes) : 0;
+  const rawWpm =
+    elapsedMinutes > 0
+      ? Math.round(state.totalKeystrokes / 5 / elapsedMinutes)
+      : 0;
   const total = state.totalKeystrokes;
-  const accuracy = total > 0 ? Math.round((state.correctKeystrokes / total) * 100) : 100;
-  
+  const accuracy =
+    total > 0 ? Math.round((state.correctKeystrokes / total) * 100) : 100;
+
   return {
     wpm,
     rawWpm,
@@ -500,6 +711,9 @@ function calculateSessionStats() {
     totalKeystrokes: total,
     time: Math.round(elapsedSeconds),
     date: new Date().toISOString(),
+    text: state.targetText,
+    url: window.location.href,
+    sourceTitle: document.title,
   };
 }
 
@@ -513,24 +727,26 @@ function sessionComplete() {
   const stats = calculateSessionStats();
 
   // Hide the typing interface
-  const headerStats = document.getElementById('overlay-stats-top');
-  if (headerStats) headerStats.classList.add('hidden');
-  
-  const inputArea = document.getElementById('overlay-input-wrapper');
-  if (inputArea) inputArea.classList.add('hidden');
+  const headerStats = document.getElementById("overlay-stats-top");
+  if (headerStats) headerStats.classList.add("hidden");
 
-  const textarea = document.getElementById('overlay-textarea');
+  const inputArea = document.getElementById("overlay-input-wrapper");
+  if (inputArea) inputArea.classList.add("hidden");
+
+  const textarea = document.getElementById("overlay-textarea");
   if (textarea) textarea.disabled = true;
-  
-  const controls = document.querySelector('.overlay-controls-modern');
-  if (controls) controls.classList.add('hidden');
 
-  const existingResults = overlayPanel ? overlayPanel.querySelector('.overlay-results-modern') : null;
+  const controls = document.querySelector(".overlay-controls-modern");
+  if (controls) controls.classList.add("hidden");
+
+  const existingResults = overlayPanel
+    ? overlayPanel.querySelector(".overlay-results-modern")
+    : null;
   if (existingResults) existingResults.remove();
 
   // Create results view
-  const resultsDiv = document.createElement('div');
-  resultsDiv.className = 'overlay-results-modern';
+  const resultsDiv = document.createElement("div");
+  resultsDiv.className = "overlay-results-modern";
   resultsDiv.innerHTML = `
     <div class="results-hero">
       <span class="results-kicker">
@@ -590,24 +806,40 @@ function sessionComplete() {
         <span>Close</span>
       </button>
     </div>
+    <div class="results-footer-subtle">
+      <span class="footer-subtle-msg">Like TypePulse?</span>
+      <a href="https://buymeacoffee.com/WaelFa" target="_blank" rel="noopener" class="footer-subtle-link" title="Support the developer">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M2 12.5C2 12.5 6 6 12 6c6 0 10 6.5 10 6.5S18 19 12 19c-6 0-10-6.5-10-6.5z" opacity="0.2"/><path d="M18 8.5a5.5 5.5 0 0 0-11 0v1a4 4 0 0 0-3 3.87A4.5 4.5 0 0 0 8.5 18h7a4.5 4.5 0 0 0 4.5-4.63A4 4 0 0 0 18 9.5v-1zM9 8.5a3.5 3.5 0 0 1 7 0v1h-7v-1z"/></svg>
+        Buy me a coffee
+      </a>
+      <span class="footer-subtle-sep">·</span>
+      <a href="https://chromewebstore.google.com/detail/typepulse/hicbcjkddckijmjlfmgokhjgimifokcn" target="_blank" rel="noopener" class="footer-subtle-link" title="Leave a review">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Rate & suggest features
+      </a>
+    </div>
   `;
-  
+
   overlayPanel.appendChild(resultsDiv);
 
   // Bind result buttons
-  document.getElementById('results-restart-btn').addEventListener('click', () => {
-    resultsDiv.remove();
-    headerStats.classList.remove('hidden');
-    inputArea.classList.remove('hidden');
-    controls.classList.remove('hidden');
-    resetSession();
-  });
-  
-  document.getElementById('results-close-btn').addEventListener('click', finishSession);
+  document
+    .getElementById("results-restart-btn")
+    .addEventListener("click", () => {
+      resultsDiv.remove();
+      headerStats.classList.remove("hidden");
+      inputArea.classList.remove("hidden");
+      controls.classList.remove("hidden");
+      resetSession();
+    });
+
+  document
+    .getElementById("results-close-btn")
+    .addEventListener("click", finishSession);
 
   // Save stats
   try {
-     chrome.runtime.sendMessage({ action: 'save_stats', stats });
+    chrome.runtime.sendMessage({ action: "save_stats", stats });
   } catch (err) {}
 }
 
@@ -621,7 +853,7 @@ function resetSession() {
   clearInterval(state.timerId);
   resetState();
   resetUI();
-  const textarea = document.getElementById('overlay-textarea');
+  const textarea = document.getElementById("overlay-textarea");
   if (textarea) textarea.focus();
 }
 
@@ -638,27 +870,27 @@ function resetState() {
 }
 
 function resetUI() {
-  const textarea = document.getElementById('overlay-textarea');
+  const textarea = document.getElementById("overlay-textarea");
   if (textarea) {
-    textarea.value = '';
+    textarea.value = "";
     textarea.disabled = false;
   }
-  const wpmEl = document.getElementById('stats-wpm');
-  if (wpmEl) wpmEl.textContent = '0';
-  const accEl = document.getElementById('stats-accuracy');
-  if (accEl) accEl.textContent = '100';
-  const timeEl = document.getElementById('stats-time');
-  if (timeEl) timeEl.textContent = '0';
-  
-  const statsTop = document.getElementById('overlay-stats-top');
-  if (statsTop) statsTop.classList.remove('typing-started');
+  const wpmEl = document.getElementById("stats-wpm");
+  if (wpmEl) wpmEl.textContent = "0";
+  const accEl = document.getElementById("stats-accuracy");
+  if (accEl) accEl.textContent = "100";
+  const timeEl = document.getElementById("stats-time");
+  if (timeEl) timeEl.textContent = "0";
 
-  const wrapper = document.getElementById('overlay-input-wrapper');
+  const statsTop = document.getElementById("overlay-stats-top");
+  if (statsTop) statsTop.classList.remove("typing-started");
+
+  const wrapper = document.getElementById("overlay-input-wrapper");
   if (wrapper) wrapper.scrollTop = 0;
   lastScrollTarget = null;
   lastCaretLineTop = null;
   lastMeasuredIndex = 0;
-  
+
   renderTextDisplay();
 }
 
@@ -679,18 +911,18 @@ function removePanels() {
     overlayBackdrop = null;
   }
   hideFloatingButton();
-  document.body.classList.remove('typing-overlay-active');
-  window.removeEventListener('keydown', captureWindowKeys, true);
-  window.removeEventListener('resize', updateCaretPosition);
+  document.body.classList.remove("typing-overlay-active");
+  window.removeEventListener("keydown", captureWindowKeys, true);
+  window.removeEventListener("resize", updateCaretPosition);
 }
 
 // ---------- Toast Notification ----------
 function showToast(message) {
-  let existing = document.getElementById('typing-toast');
+  let existing = document.getElementById("typing-toast");
   if (existing) existing.remove();
 
-  const toast = document.createElement('div');
-  toast.id = 'typing-toast';
+  const toast = document.createElement("div");
+  toast.id = "typing-toast";
   toast.textContent = message;
   document.body.appendChild(toast);
 
@@ -701,16 +933,34 @@ function showToast(message) {
 
 // ---------- Message from popup ----------
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'open_overlay') {
-    createOverlayPanel(message.selectedText || '')
+  if (message.action === "open_overlay") {
+    createOverlayPanel(message.selectedText || "")
       .then(() => sendResponse({ ok: true }))
       .catch(() => sendResponse({ ok: false }));
     return true;
   }
-  if (message.action === 'selection_button_setting_changed') {
+  if (message.action === "selection_button_setting_changed") {
     showSelectionButton = message.enabled !== false;
     if (!showSelectionButton) hideFloatingButton();
     sendResponse({ ok: true });
+  }
+  if (message.action === "retype_from_history") {
+    const retypeText = message.text || "";
+    if (retypeText) {
+      removePanels();
+      resetState();
+      createOverlayPanel(retypeText)
+        .then(() => sendResponse({ ok: true }))
+        .catch(() => sendResponse({ ok: false }));
+    } else {
+      sendResponse({ ok: false, error: "No text provided" });
+    }
+    return true;
+  }
+  if (message.action === "apply_theme") {
+    applyThemeVars(message.theme);
+    sendResponse({ ok: true });
+    return true;
   }
   return true;
 });

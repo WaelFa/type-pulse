@@ -3,7 +3,11 @@
   "name": "TypePulse",
   "description": "Select text on any page, type it out, and track your speed & accuracy in real-time.",
   "version": "1.0.1",
-  "permissions": ["storage", "activeTab", "contextMenus"],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "contextMenus"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -17,14 +21,24 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["overlay.css"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "overlay.css",
+        "history.css",
+        "history.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],

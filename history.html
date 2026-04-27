@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TypePulse — Typing History</title>
+  <link rel="stylesheet" href="history.css">
+</head>
+<body>
+  <div class="page-container">
+    <header class="page-header">
+      <div class="header-left">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+        </div>
+        <h1>Typing History</h1>
+      </div>
+      <div class="header-actions">
+        <button id="clear-history-btn" class="btn btn-ghost" title="Clear all history">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M5 6l1 14h12l1-14M10 11v6M14 11v6"/></svg>
+          Clear All
+        </button>
+      </div>
+    </header>
+
+    <div class="stats-banner" id="stats-banner">
+      <div class="banner-stat">
+        <span class="banner-label">Total Sessions</span>
+        <span class="banner-value" id="total-sessions">0</span>
+      </div>
+      <div class="banner-stat">
+        <span class="banner-label">Best WPM</span>
+        <span class="banner-value" id="best-wpm">-</span>
+      </div>
+      <div class="banner-stat">
+        <span class="banner-label">Avg Accuracy</span>
+        <span class="banner-value" id="avg-accuracy">-</span>
+      </div>
+      <div class="banner-stat">
+        <span class="banner-label">Avg WPM</span>
+        <span class="banner-value" id="avg-wpm">-</span>
+      </div>
+    </div>
+
+    <div id="history-list" class="history-list">
+      <!-- Session entries rendered here -->
+    </div>
+
+    <div id="empty-state" class="empty-state hidden">
+      <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <h2>No typing sessions yet</h2>
+      <p>Complete a typing test to see your history here.</p>
+    </div>
+  </div>
+
+  <script src="history.js"></script>
+</body>
+</html>
